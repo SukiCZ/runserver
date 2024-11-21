@@ -6,6 +6,9 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
+const RESPONSE_200_LINE: &str = "HTTP/1.1 200 OK";
+const RESPONSE_404_LINE: &str = "HTTP/1.1 404 NOT FOUND";
+
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
@@ -23,9 +26,9 @@ fn handle_connection(mut stream: TcpStream) {
     let (_method, path, _version) = utils::parse_request_line(&request_line);
 
     let (status_line, filename) = if path == "/" {
-        ("HTTP/1.1 200 OK", "hello.html")
+        (RESPONSE_200_LINE, "hello.html")
     } else {
-        ("HTTP/1.1 404 NOT FOUND", "404.html")
+        (RESPONSE_404_LINE, "404.html")
     };
 
     let contents = fs::read_to_string(format!("pages/{filename}")).unwrap();
