@@ -25,10 +25,13 @@ fn handle_connection(mut stream: TcpStream) {
 
     let (_method, path, _version) = utils::parse_request_line(&request_line);
 
-    let (status_line, filename) = if path == "/" {
-        (RESPONSE_200_LINE, "hello.html")
-    } else {
-        (RESPONSE_404_LINE, "404.html")
+    let (status_line, filename) = match path {
+        "/" => (RESPONSE_200_LINE, "hello.html"),
+        "/sleep" => {
+            std::thread::sleep(std::time::Duration::from_secs(5));
+            (RESPONSE_200_LINE, "hello.html")
+        },
+        _ => (RESPONSE_404_LINE, "404.html"),
     };
 
     let contents = fs::read_to_string(format!("pages/{filename}")).unwrap();
