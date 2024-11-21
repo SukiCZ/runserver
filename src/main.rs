@@ -1,3 +1,5 @@
+mod utils;
+
 use std::{
     fs,
     io::{prelude::*, BufReader},
@@ -18,21 +20,18 @@ fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
     let request_line = buf_reader.lines().next().unwrap().unwrap();
 
-    if request_line == "GET / HTTP/1.1" {
-        let status_line = "HTTP/1.1 200 OK";
-        let contents = fs::read_to_string("pages/hello.html").unwrap();
-        let length = contents.len();
+    let (_method, path, _version) = utils::parse_request_line(&request_line);
 
-        let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
-
-        stream.write_all(response.as_bytes()).unwrap();
+    let (status_line, filename) = if path == "/" {
+        ("HTTP/1.1 200 OK", "hello.html")
     } else {
-        let status_line = "HTTP/1.1 404 NOT FOUND";
-        let contents = fs::read_to_string("pages/404.html").unwrap();
-        let length = contents.len();
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
 
-        let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+    let contents = fs::read_to_string(format!("pages/{filename}")).unwrap();
+    let length = contents.len();
 
-        stream.write_all(response.as_bytes()).unwrap();
-    }
+    let response = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+
+    stream.write_all(response.as_bytes()).unwrap();
 }
