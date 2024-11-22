@@ -1,9 +1,11 @@
 mod utils;
 
+use runserver::ThreadPool;
 use std::{
     fs,
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
+    thread,
 };
 
 const RESPONSE_200_LINE: &str = "HTTP/1.1 200 OK";
@@ -11,11 +13,14 @@ const RESPONSE_404_LINE: &str = "HTTP/1.1 404 NOT FOUND";
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
-        handle_connection(stream);
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
 }
 
@@ -28,9 +33,9 @@ fn handle_connection(mut stream: TcpStream) {
     let (status_line, filename) = match path {
         "/" => (RESPONSE_200_LINE, "hello.html"),
         "/sleep" => {
-            std::thread::sleep(std::time::Duration::from_secs(5));
+            thread::sleep(std::time::Duration::from_secs(5));
             (RESPONSE_200_LINE, "hello.html")
-        },
+        }
         _ => (RESPONSE_404_LINE, "404.html"),
     };
 
